@@ -1,0 +1,94 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var countries = ee.FeatureCollection("FAO/GAUL_SIMPLIFIED_500m/2015/level1"),
+    LS8 = ee.ImageCollection("LANDSAT/LC08/C02/T1_TOA"),
+    Sentinel_2 = ee.ImageCollection("COPERNICUS/S2");
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+
+// clip Poland from FAO_GAUL dataset according to the country Admin Code
+var Poland = countries.filter(ee.Filter.eq('ADM0_CODE', 198));
+print(Poland)
+Map.addLayer(Poland,['blue'], 'Poland_Bounds');
+
+// Set the visualisation parameters of Sentines_2 imagery
+var rgbVis = {
+  min:0,
+  max:3000,
+  bands: ['B4','B3','B2'],
+}
+
+// Select the image from Sentinel_2 2022 dataset and filter date, cloud and bounderies
+var Sentinel_2022 = Sentinel_2
+.filterDate('2022-06-01','2022-06-30')
+.filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE',20))
+.filterBounds(Poland);
+//Map.addLayer(image,['blue'], 'ROI');
+
+// Calculate the image composite by calculating the median
+var Sentinel_2022_median = Sentinel_2022.median();
+//Map.addLayer(image_median, rgbVis, 'Median');
+//Map.addLayer(Poland,['blue'], 'Poland_Bounds');
+var ROI = Sentinel_2022_median.clip(Poland);
+Map.addLayer(ROI, rgbVis, 'Senteinel_2_2022');
+
+
+// Select the image from Sentinel_2 2019 dataset and filter date, cloud and bounderies
+var Sentinel_2019 = Sentinel_2
+.filterDate('2019-06-01','2019-06-30')
+.filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE',20))
+.filterBounds(Poland);
+//Map.addLayer(image,['blue'], 'ROI');
+
+// Calculate the image composite by calculating the median
+var Sentinel_2019_median = Sentinel_2019.median();
+//Map.addLayer(image_median, rgbVis, 'Median');
+//Map.addLayer(Poland,['blue'], 'Poland_Bounds');
+var ROI = Sentinel_2019_median.clip(Poland);
+Map.addLayer(ROI, rgbVis, 'Senteinel_2_2019');
+
+
+// Select the image from Sentinel_2 2016 dataset and filter date, cloud and bounderies
+var Sentinel_2016 = Sentinel_2
+.filterDate('2016-06-01','2016-06-30')
+.filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE',20))
+.filterBounds(Poland);
+//Map.addLayer(image,['blue'], 'ROI');
+
+// Calculate the image composite by calculating the median
+var Sentinel_2016_median = Sentinel_2016.median();
+//Map.addLayer(image_median, rgbVis, 'Median');
+//Map.addLayer(Poland,['blue'], 'Poland_Bounds');
+var ROI = Sentinel_2016_median.clip(Poland);
+Map.addLayer(ROI, rgbVis, 'Senteinel_2_2016');
+
+
+// Load Sentinel-1 C-band SAR Ground Range collection (log scale, VV, descending, date)
+var collectionVV = ee.ImageCollection('COPERNICUS/S1_GRD')
+.filter(ee.Filter.eq('instrumentMode', 'IW'))
+.filter(ee.Filter.listContains('transmitterReceiverPolarisation', 'VV'))
+.filter(ee.Filter.eq('orbitProperties_pass', 'DESCENDING'))
+.filterMetadata('resolution_meters', 'equals' , 10)
+.filterBounds(Poland)
+.select('VV')
+.filterDate('2022-06-01', '2022-06-30').median();
+print(collectionVV, 'Collection VV');
+
+// Load Sentinel-1 C-band SAR Ground Range collection (log scale, VH, descending, date)
+var collectionVH = ee.ImageCollection('COPERNICUS/S1_GRD')
+.filter(ee.Filter.eq('instrumentMode', 'IW'))
+.filter(ee.Filter.listContains('transmitterReceiverPolarisation', 'VH'))
+.filter(ee.Filter.eq('orbitProperties_pass', 'DESCENDING'))
+.filterMetadata('resolution_meters', 'equals' , 10)
+.filterBounds(Poland)
+.select('VH')
+.filterDate('2022-06-01', '2022-06-30').median();
+print(collectionVH, 'Collection VH');
+
+
+// Clip the SAR images to ountry and add the images to "layers" in order to display them
+Map.centerObject(Poland, 7);
+var SARVV = collectionVV.clip(Poland);
+var SARVH = collectionVH.clip(Poland);
+Map.addLayer(SARVV, {min:-15,max:0}, 'SAR VV_2022', 0);
+Map.addLayer(SARVH, {min:-25,max:0}, 'SAR VH_2022', 0);
+
+
